@@ -33,6 +33,14 @@ _Last updated: 2026-09-07 · Stage: Plan · AI product? no_
 - **Riskiest assumption this depends on:** People will keep entering and updating subscriptions manually. Bank-linked apps exist because manual entry lapses. This holds only if adding a subscription is fast (under a minute) and the renewals view is useful enough to return to weekly.
 - **Business model (free / paid / internal):** Free. No paid tier planned; no AI/LLM features.
 
+## Validation        <!-- /validate --> (test the riskiest assumption BEFORE code; append a dated entry per run)
+- **Assumption under test (falsifiable: <user> will <behaviour> because <reason>):**
+- **Experiment (type · who it reaches · time box · due date):**
+- **Pass/fail threshold (written BEFORE the result):**
+- **Measured result (number / quoted evidence · date · raw notes in docs/validation/):**
+- **Verdict (proceed / pivot / kill) + one-line reason:**
+- **Override (only if skipped: date · reason · "assumption untested"):**
+
 ## Scope             <!-- /scope -->
 - **THE core feature (the one thing):** The subscriptions dashboard: one screen listing every subscription with cost and next renewal date, showing total monthly and yearly spend and what renews in the next 30 days. Everything else feeds this screen.
 - **In scope (now):**
