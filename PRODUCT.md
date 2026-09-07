@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-07 · Stage: Vision · AI product? no_
+_Last updated: 2026-09-07 · Stage: Scope · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -34,10 +34,29 @@ _Last updated: 2026-09-07 · Stage: Vision · AI product? no_
 - **Business model (free / paid / internal):** Free. No paid tier planned; no AI/LLM features.
 
 ## Scope             <!-- /scope -->
-- **THE core feature (the one thing):**
+- **THE core feature (the one thing):** The subscriptions dashboard: one screen listing every subscription with cost and next renewal date, showing total monthly and yearly spend and what renews in the next 30 days. Everything else feeds this screen.
 - **In scope (now):**
+  - Account creation and login (email + password) → my data is private and mine. Prerequisite for the north-star "logged-in weekly user".
+  - Add / edit / delete a subscription with name, price, billing cycle, category, next renewal date → I can record a subscription in under a minute. Feeds the dashboard.
+  - Total monthly and yearly spend, normalised across billing cycles → I know what all this costs me. The reason to look.
+  - Upcoming renewals (next 30 days, soonest first) → I see what is about to charge me. Rendering this for a logged-in user IS the north-star event.
+  - Filter subscriptions by category, and spend broken down by category → I can find the fat to cut. Drives the cancel decision in the job-to-be-done.
+  - One currency per account, chosen at signup → totals are simple and correct.
 - **Deferred (out for now + the trigger that would bring it in):**
+  - Renewal reminders by email/push — trigger: weekly active users flatten or drop because people forget to open the app.
+  - Multi-currency with exchange rates — trigger: a real user needs subscriptions in two currencies on one account.
+  - Native iOS/Android app — trigger: responsive web measurably fails on phones (bounce or complaints), after the web app has weekly active users.
+  - Mark-as-cancelled with savings total — trigger: users ask "how much have I saved", or the north star needs a second metric.
+  - Price history per subscription — trigger: users report editing prices often and losing the old value.
+  - CSV export / import — trigger: a user asks to migrate from Wallos, Bobby, a spreadsheet, or leave.
+  - Dark mode — trigger: first user request; cheap once the design tokens exist.
+  - Admin panel / usage analytics dashboard — trigger: more than one operator, or the north star cannot be read from logs.
+  - Paid tier — trigger: hosting cost exceeds what the owner will absorb, or users ask to pay.
 - **Non-goals (deliberately never building):**
+  - Bank linking / automatic charge detection — contradicts the vision's "no bank login to a third party" promise.
+  - Household / shared / multi-user accounts — single-user product; sharing is a different product.
+  - AI / LLM features — no AI product; keeps the security surface small.
+  - Bill negotiation or cancelling on the user's behalf — Rocket Money's territory, not a private tracker's.
 
 ## Plan              <!-- /plan -->
 - **Phases / milestones (core first):**
