@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-07 · Stage: Scope · AI product? no_
+_Last updated: 2026-09-07 · Stage: Plan · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -60,9 +60,30 @@ _Last updated: 2026-09-07 · Stage: Scope · AI product? no_
 
 ## Plan              <!-- /plan -->
 - **Phases / milestones (core first):**
-- **Timeline:**
-- **Exit criteria per milestone:**
+  - **M0 — Walking skeleton.** Repo structure, config from `.env`, structured logging, DB with migrations, one health endpoint, one placeholder page, CI running lint + secret-scan + tests, pre-commit. Produced by /structure, /design-system, /foundation, /contracts.
+  - **M1 — Core slice: "I can see what I pay."** Sign up, log in, add a subscription (name, price, cycle, category, renewal date, account currency set at signup), and the dashboard shows it with total monthly and yearly spend and the next-30-days renewals list. Thin end-to-end vertical, not layers. Includes the north-star event.
+  - **M2 — Manage and cut: full CRUD + categories.** Edit and delete a subscription, filter the list by category, spend broken down by category. Completes every in-scope item.
+  - **M3 — Real users can use it.** Deployed on a public HTTPS URL with the production bootstrap (migrations run, secrets from the host's env, error reporter live), README for users and developers, account deletion so a user can leave, and the north-star metric readable from logs.
+- **Timeline (relative; one subtask per session):**
+  - M0: ~3 sessions (structure+design · foundation · contracts).
+  - M1: ~4 sessions (auth · subscription create · dashboard totals + renewals · north-star event + E2E).
+  - M2: ~3 sessions (edit/delete · category filter · category breakdown).
+  - M3: ~2 sessions (deploy + account deletion · docs + release).
+  - Paid infra: none planned. Hosting uses a free tier; trigger to pay = free tier limits hit by real usage, recorded in Scope#Deferred (paid tier).
+- **Exit criteria per milestone (observable, testable):**
+  - **M0 done when:** `make ci` (or the equivalent) passes locally and in GitHub Actions on a clean clone; the app starts from `.env.example` values and `GET /health` returns 200 with the DB migrated; a secret-scan and dependency-vuln scan run in CI; a commit with a fake secret is rejected by pre-commit.
+  - **M1 done when:** an automated end-to-end test signs up user A, logs in, adds one monthly and one yearly subscription, and the dashboard shows the correct monthly total, yearly total and both renewals in date order; the same test signs up user B and proves B sees none of A's rows and gets 404/403 on A's subscription id; the renewals view emits one structured north-star event per render with the user id and no subscription content; a subscription can be added in under 60 seconds by hand.
+  - **M2 done when:** the E2E test edits a price and the totals change accordingly; deletes a subscription and it vanishes from list, totals and renewals; filters by one category and only that category's rows appear; the category breakdown sums equal the monthly total; every write path checks ownership and the authz test proves user B cannot edit or delete A's row.
+  - **M3 done when:** a fresh browser on the public URL can sign up, add a subscription, log out, log back in and still see it; HTTPS only, secure httpOnly session cookie, rate-limited signup/login verified by a scripted burst; account deletion removes the user and all their rows (verified by a DB query); README lets a new developer run it locally in under 15 minutes; the north-star count for the last 7 days can be read from logs with one documented command.
 - **Concern-area coverage (security · ai · observability · DX · testing · infra · docs · product → now/next/later/N-A + trigger):**
+  - **security — NOW (M1):** per-user ownership check on every data path; cookie-based session auth (httpOnly, secure, SameSite), never localStorage tokens; password hashing with a current KDF; input validation at the API boundary; secret-scan + dependency-vuln scan in CI (M0); rate limit on signup/login (M3); CORS locked to the app origin. Data deletion / leave-able account: **NEXT (M3)**, trigger: before the public URL is shared with anyone.
+  - **ai-specific — N/A.** No LLM in the product (Vision). Trigger to revisit: an AI feature is reopened via the Non-goal reversal protocol.
+  - **observability — NOW (M0/M1):** structured JSON logging with request id; north-star event emitted server-side (M1); error reporter stub in M0, real one at M3. Dashboards/alerting: **LATER**, trigger: first 10 weekly active users or first production incident. Cost-per-run: N/A, no metered externals.
+  - **developer-experience — NOW (M0):** README, task runner (Makefile), `.env.example`, pre-commit. OpenAPI docs: NOW if the backend framework gives them for free, else NEXT. CHANGELOG + CONTRIBUTING: **NEXT (M3)**, trigger: first release tag.
+  - **testing — NOW (M1):** unit for cycle-normalisation and totals maths; integration for auth + CRUD against a real DB; E2E for the M1/M2 criteria; adversarial authz cases (user B vs A). Golden dataset: a fixed seed of subscriptions with known totals, checked in. Deterministic, run in CI, red blocks merge.
+  - **infra — NOW (M0):** CI mirroring the prod bootstrap; schema only via migrations; containerised app; branch protection on `main` once CI exists. Backup/restore: **LATER**, trigger: first real user other than the owner.
+  - **documentation — NOW (M0) and per feature:** PRODUCT.md, STRUCTURE.md, DESIGN.md, ADRs from /architect, one doc per feature in docs/features/. Ops runbook: **NEXT (M3)**, trigger: first deploy.
+  - **product — NOW:** vision, scope, north star, riskiest assumption, business model all recorded above. Roadmap = this section. Riskiest-assumption check is scheduled at /learn after M3: are people re-entering data weekly?
 
 ## Architecture      <!-- /architect -->
 - **Stack + tools (and why, 2026 OSS-first):**
