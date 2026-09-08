@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Build (M1-SLICE-02 completed, M1-SLICE-03 next) · AI product? no_
+_Last updated: 2026-09-08 · Stage: Learn (M1-SLICE-02 learnings captured, M1-SLICE-03 next) · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -245,11 +245,16 @@ _Last updated: 2026-09-08 · Stage: Build (M1-SLICE-02 completed, M1-SLICE-03 ne
 | 2026-09-08 | M1-SLICE-02 Subscription Domain & Storage Seam | DEEP: adversarial isolation, integer minor units, 44 unit + 24 integration tests passed, race condition [ADHOC-03] & wildcard escaping [ADHOC-04] fixed | docs/features/subscriptions-crud.md & docs/issues/ reconciled | Updated [Unreleased] in CHANGELOG.md | git revert / migration-down | [PR: M1-SLICE-02](https://github.com/kish21/subscription-tracker/pulls) |
 
 ## Learnings         <!-- /learn -->
-- **Success metric + result (instrumented, not guessed):**
-- **User/usage signal incorporated:**
+- **Success metric + result (instrumented, not guessed):** North-star metric (*Weekly active users who log in and view upcoming-renewals*) contract defined (`renewals_viewed` event in `src/schemas/events.ts`); UI emission scheduled for M1-SLICE-03. Current engineering metrics: 44 unit tests (100% pass), 24 integration tests (100% pass), 0 lint/type errors, 0 duplicate rows on concurrent idempotency collisions.
+- **User/usage signal incorporated:** Live verification and review exposed two edge cases: (1) concurrent double-submissions with `idempotencyKey` caused unhandled PostgreSQL 23505 errors; fixed via graceful fallback to existing record ([ADHOC-03]); (2) unescaped `_` and `%` in searches altered query semantics; fixed via `escapeLikePattern` ([ADHOC-04]).
 - **Retro (what worked / what to change):**
-- **Decided next — build / iterate / KILL (from evidence):**
-- **Observability + cost watch in place:**
+  - *What worked:* Mandatory `userId` on all repository queries (ADR-005) made tenant leaks impossible at compile time; integer minor units (ADR-004) eliminated floating-point distortion.
+  - *What to change:* Vitest integration tests against single local Postgres container must run sequentially (`fileParallelism: false`) to prevent inter-file table truncation races.
+- **Reusable learning harvested:**
+  - Database-backed integration test suites in Vitest sharing a single test DB require `fileParallelism: false`.
+  - Idempotency key stores backed by unique DB constraints should always catch unique constraint violations and re-read the existing record to survive concurrent in-flight retries.
+- **Decided next — build / iterate / KILL (from evidence):** **BUILD** [M1-SLICE-03] Dashboard Experience & North Star Event (`docs/issues/M1-SLICE-03_dashboard_experience_north_star.md`). Auth (Slice 1) and Storage/Math (Slice 2) are fully proven; completing Slice 3 finishes Milestone 1 and delivers THE core feature to the user.
+- **Observability + cost watch in place:** Structured logging with secret redaction active; free-tier Postgres with 0 external metered APIs ($0/month cost). North-star log event transport ready for Slice 3.
 
 ## Drift log         <!-- /drift-check (run anytime) -->
 | Date | Drift found (scope/vision/plan/docs) | Recommendation (cut / re-scope+trigger / fix) |
