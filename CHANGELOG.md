@@ -17,5 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Makefile`, `SECURITY.md`, `CONTRIBUTING.md`, `docker-compose.yml` for local Postgres.
 - Product decisions recorded in `PRODUCT.md`: vision, scope, plan, and the architecture
   (stack, seven ADRs, adapter table with per-external resilience strategies).
+- Authentication & session lifecycle (`M1-SLICE-01`): Better Auth with PostgreSQL Drizzle
+  adapter, Argon2id/bcrypt password hashing, secure httpOnly session cookies, and login/signup UI.
+- Subscription domain & storage seam (`M1-SLICE-02`): pure financial calculations
+  (`src/domain/calculations.ts`) with integer minor units arithmetic (ADR-004), tenant-isolated
+  repository (`src/db/repositories/subscription.ts`) enforcing `userId` scoping (ADR-005),
+  concurrent idempotency key handling ([ADHOC-03]), SQL LIKE wildcard escaping ([ADHOC-04]),
+  and REST API endpoints at `/api/v1/subscriptions`.
 
 [Unreleased]: https://github.com/kish21/subscription-tracker/commits/main

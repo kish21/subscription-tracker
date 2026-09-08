@@ -41,12 +41,12 @@ subscriptions
 An authenticated user can submit a POST request to `/api/v1/subscriptions` with name, price in minor units or decimal, billing cycle, category, and renewal date, and fetch their subscription list via GET `/api/v1/subscriptions`. Cross-account tests prove User B cannot read or list User A's subscriptions.
 
 ### 🛠️ Implementation Tasks
-- [ ] Implement pure domain arithmetic in `src/domain/calculations.ts`: cycle normalisation (monthly/quarterly/semiannual/yearly to monthly equivalent cents), upcoming renewal filtering (within N days window).
-- [ ] Implement `SubscriptionRepository` in `src/db/repositories/subscription.ts` requiring `userId` on every query (ADR-005).
-- [ ] Implement `GET` and `POST` handlers in `src/app/api/v1/subscriptions/route.ts` with session authentication and Zod schema validation.
-- [ ] Write unit tests for domain calculations in `tests/unit/calculations.test.ts` verifying rounding, integer minor units, and date comparisons.
-- [ ] Write integration tests in `tests/integration/subscriptions.test.ts` verifying tenant isolation, data persistence, and idempotency key handling.
-- [ ] Write feature documentation in `docs/features/subscriptions-crud.md`.
+- [x] Implement pure domain arithmetic in `src/domain/calculations.ts`: cycle normalisation (monthly/quarterly/semiannual/yearly to monthly equivalent cents), upcoming renewal filtering (within N days window).
+- [x] Implement `SubscriptionRepository` in `src/db/repositories/subscription.ts` requiring `userId` on every query (ADR-005).
+- [x] Implement `GET` and `POST` handlers in `src/app/api/v1/subscriptions/route.ts` with session authentication and Zod schema validation.
+- [x] Write unit tests for domain calculations in `tests/unit/calculations.test.ts` verifying rounding, integer minor units, and date comparisons.
+- [x] Write integration tests in `tests/integration/subscriptions.test.ts` verifying tenant isolation, data persistence, and idempotency key handling.
+- [x] Write feature documentation in `docs/features/subscriptions-crud.md`.
 
 ### 🔒 Security in the Definition of Done
 - [x] Every repository query takes `userId`; no query path exists without tenant scoping (ADR-005).
