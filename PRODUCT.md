@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Contracts · AI product? no_
+_Last updated: 2026-09-08 · Stage: Build (M1-SLICE-01 completed, M1-SLICE-02 next) · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -252,3 +252,5 @@ _Last updated: 2026-09-08 · Stage: Contracts · AI product? no_
 ## Drift log         <!-- /drift-check (run anytime) -->
 | Date | Drift found (scope/vision/plan/docs) | Recommendation (cut / re-scope+trigger / fix) |
 |---|---|---|
+| 2026-09-08 | Doc drift resolved: PRODUCT.md stage bumped to Build, README.md status banner updated, M1-SLICE-01 ticket tasks checked off. Vision standing finding: untested riskiest assumption (Validation override). Scope: 0 creep. Codebase clean. | Fixed on 2026-09-08. Status: On-track. |
+

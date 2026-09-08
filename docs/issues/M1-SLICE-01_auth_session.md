@@ -44,13 +44,13 @@ None (builds on M0 foundation and contracts)
 Reviewer can navigate to `/signup`, register a user with email, password, and account currency (`USD`, `EUR`, etc.), get redirected to `/dashboard`, observe the secure session cookie in browser devtools, log out, and log back in at `/login`. Unauthenticated requests to protected pages redirect to `/login`.
 
 ### 🛠️ Implementation Tasks
-- [ ] Configure Better Auth in `src/auth/server.ts` using Drizzle adapter with existing `user`, `session`, `account`, `verification` tables.
-- [ ] Implement Next.js catch-all route handler `src/app/api/auth/[...all]/route.ts`.
-- [ ] Implement `src/auth/session.ts` with fail-closed `getCurrentUser(req)` adhering to ADR-002.
-- [ ] Create accessible Auth Form component `src/components/features/auth-form.tsx` obeying `DESIGN.md` tokens and `/new-component` rules.
-- [ ] Create `/signup` and `/login` pages in `src/app/(auth)/`.
-- [ ] Write integration test `tests/integration/auth.test.ts` verifying password hashing, session issuance, invalid credentials rejection, and currency persistence.
-- [ ] Write feature documentation in `docs/features/auth.md`.
+- [x] Configure Better Auth in `src/auth/server.ts` using Drizzle adapter with existing `user`, `session`, `account`, `verification` tables.
+- [x] Implement Next.js catch-all route handler `src/app/api/auth/[...all]/route.ts`.
+- [x] Implement `src/auth/session.ts` with fail-closed `getCurrentUser(req)` adhering to ADR-002.
+- [x] Create accessible Auth Form component `src/components/features/auth-form.tsx` obeying `DESIGN.md` tokens and `/new-component` rules.
+- [x] Create `/signup` and `/login` pages in `src/app/(auth)/`.
+- [x] Write integration test `tests/integration/auth.test.ts` verifying password hashing, session issuance, invalid credentials rejection, and currency persistence.
+- [x] Write feature documentation in `docs/features/auth.md`.
 
 ### 🔒 Security in the Definition of Done
 - [x] Inputs validated against typed Zod schema (`SignUpInputSchema`, `SignInInputSchema`) at boundary.

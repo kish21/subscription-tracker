@@ -7,10 +7,10 @@ No bank login. No server to run. No app store. You type in your subscriptions, a
 the dashboard answers the one question that matters: **what am I actually paying for,
 and what is about to charge me?**
 
-> **Status: early development.** The product decisions, architecture and project
-> structure are settled and documented. The application itself is not built yet.
-> The next milestone (M0) makes it run end-to-end. See `PRODUCT.md` for exactly where
-> things stand — it is kept honest, not aspirational.
+> **Status: in development (Milestone 1).** The walking skeleton (M0) and authentication
+> lifecycle (M1-SLICE-01) are complete and running end-to-end with Postgres. Active work
+> is on subscription persistence and domain logic (M1-SLICE-02). See `PRODUCT.md` for
+> exact progress against exit criteria.
 
 ## Why this exists
 

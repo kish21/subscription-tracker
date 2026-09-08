@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { authClient } from '@/auth/client'
 
 interface AuthFormProps {
@@ -20,6 +20,7 @@ const ALLOWED_CURRENCIES = [
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,6 +29,10 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [loading, setLoading] = useState(false)
 
   const isSignup = mode === 'signup'
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -79,6 +84,74 @@ export function AuthForm({ mode }: AuthFormProps) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
       setLoading(false)
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '28rem',
+          backgroundColor: 'var(--card)',
+          color: 'var(--card-foreground)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--shadow-md)',
+          padding: '2rem',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.5rem',
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              margin: '0 0 0.5rem 0',
+            }}
+          >
+            {isSignup ? 'Create your account' : 'Welcome back'}
+          </h1>
+          <p
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '0.875rem',
+              color: 'var(--muted-foreground)',
+              margin: 0,
+            }}
+          >
+            {isSignup
+              ? 'Track your subscriptions privately with calm clarity'
+              : 'Enter your credentials to access your subscriptions'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div
+            style={{
+              minHeight: '44px',
+              backgroundColor: 'var(--muted)',
+              borderRadius: 'var(--radius)',
+            }}
+          />
+          <div
+            style={{
+              minHeight: '44px',
+              backgroundColor: 'var(--muted)',
+              borderRadius: 'var(--radius)',
+            }}
+          />
+          <div
+            style={{
+              minHeight: '44px',
+              backgroundColor: 'var(--primary)',
+              opacity: 0.7,
+              borderRadius: 'var(--radius)',
+            }}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
