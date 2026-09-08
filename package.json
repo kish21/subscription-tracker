@@ -4,7 +4,13 @@
   "private": true,
   "description": "A private, manual subscription tracker that runs in any browser — no bank linking, no self-hosting.",
   "license": "MIT",
+  "type": "module",
   "packageManager": "pnpm@10.20.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "^0.25.0"
+    }
+  },
   "engines": {
     "node": ">=22"
   },

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "sub_test_01",
+    "name": "Netflix Premium",
+    "priceMinorUnits": 2299,
+    "currency": "USD",
+    "billingCycle": "monthly",
+    "category": "Streaming",
+    "nextRenewalDate": "2026-09-15",
+    "status": "active"
+  },
+  {
+    "id": "sub_test_02",
+    "name": "Spotify Family",
+    "priceMinorUnits": 1699,
+    "currency": "USD",
+    "billingCycle": "monthly",
+    "category": "Music & Audio",
+    "nextRenewalDate": "2026-09-22",
+    "status": "active"
+  },
+  {
+    "id": "sub_test_03",
+    "name": "GitHub Copilot",
+    "priceMinorUnits": 10000,
+    "currency": "USD",
+    "billingCycle": "yearly",
+    "category": "Software",
+    "nextRenewalDate": "2026-11-01",
+    "status": "active"
+  },
+  {
+    "id": "sub_test_04",
+    "name": "Google One Cloud 2TB",
+    "priceMinorUnits": 9999,
+    "currency": "USD",
+    "billingCycle": "yearly",
+    "category": "Cloud & Hosting",
+    "nextRenewalDate": "2026-09-28",
+    "status": "active"
+  },
+  {
+    "id": "sub_test_05",
+    "name": "The New York Times",
+    "priceMinorUnits": 400,
+    "currency": "USD",
+    "billingCycle": "monthly",
+    "category": "News & Reading",
+    "nextRenewalDate": "2026-10-04",
+    "status": "active"
+  },
+  {
+    "id": "sub_test_06",
+    "name": "Climbing Gym",
+    "priceMinorUnits": 24000,
+    "currency": "USD",
+    "billingCycle": "quarterly",
+    "category": "Health & Fitness",
+    "nextRenewalDate": "2026-09-18",
+    "status": "active"
+  }
+]

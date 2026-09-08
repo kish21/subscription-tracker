@@ -1,0 +1,603 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Subscription Tracker API",
+    "version": "1.0.0",
+    "description": "Private, manual subscription tracker REST API. Operates with strict integer minor units for monetary amounts, ISO-8601 calendar dates (YYYY-MM-DD), and per-user tenant isolation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Returns operational status, database connectivity, latency, and system metadata.",
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "System is degraded or down",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sign-up": {
+      "post": {
+        "summary": "User Registration",
+        "description": "Creates a new user account with default account currency and signs in.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignUpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sign-in": {
+      "post": {
+        "summary": "User Login",
+        "description": "Authenticates user via email and password, establishing an httpOnly session cookie.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "summary": "Get Current Session",
+        "description": "Fetches authenticated user information from the session cookie.",
+        "responses": {
+          "200": {
+            "description": "Authenticated session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions": {
+      "get": {
+        "summary": "List Subscriptions",
+        "description": "Returns all subscriptions owned by the authenticated user with optional filtering.",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "cancelled"]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscriptions list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Subscription",
+        "description": "Creates a new subscription for the authenticated user. Supports idempotency keys for safe retries.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/{id}": {
+      "get": {
+        "summary": "Get Subscription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Subscription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Subscription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Subscription deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard": {
+      "get": {
+        "summary": "Get Dashboard Summary",
+        "description": "Calculates monthly & yearly normalised totals, upcoming renewals within the configured window, and category breakdown.",
+        "responses": {
+          "200": {
+            "description": "Dashboard summary and upcoming renewals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Currency": {
+        "type": "string",
+        "enum": ["USD", "EUR", "GBP", "INR", "CAD", "AUD"]
+      },
+      "BillingCycle": {
+        "type": "string",
+        "enum": ["monthly", "quarterly", "semiannual", "yearly"]
+      },
+      "Category": {
+        "type": "string",
+        "enum": [
+          "Streaming",
+          "Software",
+          "Cloud & Hosting",
+          "News & Reading",
+          "Music & Audio",
+          "Gaming",
+          "Health & Fitness",
+          "Utilities",
+          "Other"
+        ]
+      },
+      "SignUpRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency",
+            "default": "USD"
+          }
+        }
+      },
+      "SignInRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "name", "email", "currency", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "currency": { "$ref": "#/components/schemas/Currency" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "required": ["user", "session"],
+        "properties": {
+          "user": { "$ref": "#/components/schemas/User" },
+          "session": {
+            "type": "object",
+            "required": ["id", "expiresAt"],
+            "properties": {
+              "id": { "type": "string" },
+              "expiresAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      },
+      "CreateSubscriptionRequest": {
+        "type": "object",
+        "required": ["name", "priceMinorUnits", "billingCycle", "category", "nextRenewalDate"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "priceMinorUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000,
+            "description": "Price strictly in integer minor units (cents). For example, $14.99 is 1499."
+          },
+          "billingCycle": { "$ref": "#/components/schemas/BillingCycle" },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "nextRenewalDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "idempotencyKey": { "type": "string", "maxLength": 128 }
+        }
+      },
+      "UpdateSubscriptionRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "priceMinorUnits": { "type": "integer", "minimum": 0, "maximum": 100000000 },
+          "billingCycle": { "$ref": "#/components/schemas/BillingCycle" },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "nextRenewalDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "status": { "type": "string", "enum": ["active", "cancelled"] }
+        }
+      },
+      "SubscriptionResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "priceMinorUnits",
+          "currency",
+          "billingCycle",
+          "category",
+          "nextRenewalDate",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "name": { "type": "string" },
+          "priceMinorUnits": { "type": "integer" },
+          "currency": { "$ref": "#/components/schemas/Currency" },
+          "billingCycle": { "$ref": "#/components/schemas/BillingCycle" },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "nextRenewalDate": { "type": "string", "format": "date" },
+          "status": { "type": "string", "enum": ["active", "cancelled"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SubscriptionListResponse": {
+        "type": "object",
+        "required": ["items", "totalCount"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SubscriptionResponse" }
+          },
+          "totalCount": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "UpcomingRenewal": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "priceMinorUnits",
+          "currency",
+          "billingCycle",
+          "category",
+          "renewalDate",
+          "daysUntilRenewal"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "priceMinorUnits": { "type": "integer" },
+          "currency": { "$ref": "#/components/schemas/Currency" },
+          "billingCycle": { "$ref": "#/components/schemas/BillingCycle" },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "renewalDate": { "type": "string", "format": "date" },
+          "daysUntilRenewal": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "CategorySpendBreakdown": {
+        "type": "object",
+        "required": ["category", "totalMonthlyMinorUnits", "percentage", "subscriptionCount"],
+        "properties": {
+          "category": { "$ref": "#/components/schemas/Category" },
+          "totalMonthlyMinorUnits": { "type": "integer", "minimum": 0 },
+          "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "subscriptionCount": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "DashboardSummaryResponse": {
+        "type": "object",
+        "required": [
+          "totalMonthlyMinorUnits",
+          "totalYearlyMinorUnits",
+          "currency",
+          "activeCount",
+          "upcomingCount",
+          "upcomingWindowDays",
+          "upcomingRenewals",
+          "categoryBreakdown"
+        ],
+        "properties": {
+          "totalMonthlyMinorUnits": { "type": "integer", "minimum": 0 },
+          "totalYearlyMinorUnits": { "type": "integer", "minimum": 0 },
+          "currency": { "$ref": "#/components/schemas/Currency" },
+          "activeCount": { "type": "integer", "minimum": 0 },
+          "upcomingCount": { "type": "integer", "minimum": 0 },
+          "upcomingWindowDays": { "type": "integer", "default": 30 },
+          "upcomingRenewals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UpcomingRenewal" }
+          },
+          "categoryBreakdown": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CategorySpendBreakdown" }
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "version", "timestamp", "env", "database"],
+        "properties": {
+          "status": { "type": "string", "enum": ["healthy", "degraded", "down"] },
+          "version": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "env": { "type": "string" },
+          "database": {
+            "type": "object",
+            "required": ["connected", "latencyMs"],
+            "properties": {
+              "connected": { "type": "boolean" },
+              "latencyMs": { "type": "number" },
+              "error": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "details": {}
+        }
+      }
+    },
+    "responses": {
+      "ErrorResponse": {
+        "description": "Error response structure",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["success", "error"],
+              "properties": {
+                "success": { "type": "boolean", "enum": [false] },
+                "error": { "$ref": "#/components/schemas/ApiError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

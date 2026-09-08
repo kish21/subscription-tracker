@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subscription Tracker — dashboard sample</title>
+
+<!-- Law 1 + T5-7: distinctive display face loaded via <link> (never CSS @import).
+     The real Next.js build self-hosts these with next/font. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   TOKENS — the whole design system. Rebrand = change these values only.
+   Light is the default. Dark uses the escape-hatch pattern so a manual
+   choice beats the OS setting (Law 22).
+   ========================================================================== */
+:root {
+  /* Type ---------------------------------------------------------------- */
+  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-size-base: 16px;
+
+  /* One modular scale, ratio 1.2 off a 16px base. Two documented tiers sit
+     below the base: 12px uppercase captions and 14px secondary metadata.
+     Body copy itself never goes below 16px (Law 3). */
+  --text-caption: 0.75rem;   /* 12px — uppercase, letterspaced labels only */
+  --text-sm:      0.875rem;  /* 14px — secondary metadata */
+  --text-base:    1rem;      /* 16px — body */
+  --text-lg:      1.2rem;    /* 19.2px */
+  --text-xl:      1.44rem;   /* 23.0px */
+  --text-2xl:     1.728rem;  /* 27.6px */
+  --text-3xl:     2.074rem;  /* 33.2px */
+  --text-4xl:     2.488rem;  /* 39.8px — the monthly total, and nothing else */
+
+  /* Spacing — 4px base unit, everything is a multiple (Law 10) ----------- */
+  --space-1: 0.25rem;  --space-2: 0.5rem;   --space-3: 0.75rem;
+  --space-4: 1rem;     --space-5: 1.25rem;  --space-6: 1.5rem;
+  --space-8: 2rem;     --space-10: 2.5rem;  --space-12: 3rem;
+
+  /* Colour — cool neutral base + ONE teal-slate accent (Law 5) ---------- */
+  --background: oklch(0.985 0.003 250);
+  --foreground: oklch(0.24 0.02 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.02 250);
+  --muted: oklch(0.96 0.004 250);
+  --muted-foreground: oklch(0.45 0.015 250);
+  --border: oklch(0.91 0.004 250);
+  --input: oklch(0.91 0.004 250);
+
+  --primary: oklch(0.48 0.09 230);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --accent: oklch(0.48 0.09 230);
+  --accent-foreground: oklch(0.99 0.005 250);
+  --ring: oklch(0.48 0.09 230);
+
+  /* Semantic status. The LABEL text is darkened until it passes AA on its
+     surface; the DOT stays brighter (3:1 graphical is enough) — Law 7. */
+  --success: oklch(0.45 0.12 155);
+  --success-dot: oklch(0.62 0.14 155);
+  --warning: oklch(0.48 0.10 70);
+  --warning-dot: oklch(0.75 0.15 75);
+  --destructive: oklch(0.50 0.19 27);
+  --destructive-dot: oklch(0.60 0.21 27);
+
+  /* Depth — a three-step ladder, not one flat shadow everywhere (Law 9) -- */
+  --radius: 0.375rem;
+  --shadow-sm: 0 1px 2px oklch(0.24 0.02 250 / 0.07);
+  --shadow-md: 0 2px 8px oklch(0.24 0.02 250 / 0.09);
+  --shadow-lg: 0 12px 32px oklch(0.24 0.02 250 / 0.16);
+
+  /* Motion — Tier 0 only. Calm Authority is a restraint family: instant
+     feedback, no decorative animation anywhere (craft.md, Bucket A). */
+  --duration-fast: 120ms;
+  --duration: 160ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  color-scheme: light;
+}
+
+/* System dark — applies unless the user manually chose Light */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: oklch(0.20 0.02 260);
+    --foreground: oklch(0.96 0.01 260);
+    --card: oklch(0.25 0.02 260);
+    --card-foreground: oklch(0.96 0.01 260);
+    --muted: oklch(0.30 0.02 260);
+    --muted-foreground: oklch(0.76 0.02 260);
+    --border: oklch(0.32 0.02 260);
+    --input: oklch(0.32 0.02 260);
+    --primary: oklch(0.66 0.10 220);
+    --primary-foreground: oklch(0.20 0.02 260);
+    --accent: oklch(0.66 0.10 220);
+    --accent-foreground: oklch(0.20 0.02 260);
+    --ring: oklch(0.66 0.10 220);
+    --success: oklch(0.76 0.13 155);
+    --success-dot: oklch(0.70 0.14 155);
+    --warning: oklch(0.82 0.13 80);
+    --warning-dot: oklch(0.78 0.15 78);
+    --destructive: oklch(0.72 0.15 27);
+    --destructive-dot: oklch(0.66 0.18 27);
+    --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
+    --shadow-md: 0 2px 8px oklch(0 0 0 / 0.45);
+    --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+/* Manual dark — the toggle wins in both directions */
+:root.dark {
+  --background: oklch(0.20 0.02 260);
+  --foreground: oklch(0.96 0.01 260);
+  --card: oklch(0.25 0.02 260);
+  --card-foreground: oklch(0.96 0.01 260);
+  --muted: oklch(0.30 0.02 260);
+  --muted-foreground: oklch(0.76 0.02 260);
+  --border: oklch(0.32 0.02 260);
+  --input: oklch(0.32 0.02 260);
+  --primary: oklch(0.66 0.10 220);
+  --primary-foreground: oklch(0.20 0.02 260);
+  --accent: oklch(0.66 0.10 220);
+  --accent-foreground: oklch(0.20 0.02 260);
+  --ring: oklch(0.66 0.10 220);
+  --success: oklch(0.76 0.13 155);
+  --success-dot: oklch(0.70 0.14 155);
+  --warning: oklch(0.82 0.13 80);
+  --warning-dot: oklch(0.78 0.15 78);
+  --destructive: oklch(0.72 0.15 27);
+  --destructive-dot: oklch(0.66 0.18 27);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 2px 8px oklch(0 0 0 / 0.45);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: var(--font-size-base, 16px); }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.015em; }
+
+/* Every amount in the product is mono + tabular. That single rule is most of
+   what makes a money screen feel trustworthy: digits line up column-wise. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* The container the Theme Studio's width buttons resize. All responsive rules
+   below are @container, so those buttons actually reflow the layout (T5-1). */
+#ts_stage { container-type: inline-size; }
+
+/* ==========================================================================
+   HEADER  — top-nav, not a sidebar: this app has two destinations, and a
+   hamburger hiding two links is theatre.
+   ========================================================================== */
+.header {
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header__inner {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-base);
+  letter-spacing: -0.01em;
+  margin-right: auto;
+}
+.brand__mark {
+  width: 1.5rem; height: 1.5rem;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: grid; place-items: center;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  flex: none;
+}
+.nav { display: flex; gap: var(--space-1); }
+.nav a {
+  display: flex; align-items: center;
+  min-height: 2.75rem;              /* 44px tap target (Law 21) */
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: transform var(--duration-fast) var(--ease);
+}
+.nav a:hover { color: var(--foreground); background: var(--muted); }
+.nav a[aria-current='page'] { color: var(--foreground); font-weight: 600; }
+.nav a:active { transform: translateY(1px); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease);
+}
+.btn--primary { background: var(--primary); color: var(--primary-foreground); }
+.btn--primary:hover { opacity: 0.9; }
+.btn--primary:active { transform: translateY(1px); }
+.btn--ghost {
+  background: transparent; color: var(--foreground); border-color: var(--border);
+}
+.btn--ghost:hover { background: var(--muted); }
+.btn--ghost:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ==========================================================================
+   PAGE
+   ========================================================================== */
+.page {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-12);
+  display: grid;
+  gap: var(--space-6);
+}
+
+.eyebrow {
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  margin: 0 0 var(--space-3);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Totals: the monthly figure is the loudest thing on the page --------- */
+.totals { padding: var(--space-6) var(--space-5); }
+.totals__grid { display: grid; gap: var(--space-6); }
+.total__label {
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+.total__value {
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  line-height: 1.1;
+  margin-top: var(--space-1);
+  letter-spacing: -0.02em;
+}
+.total--secondary .total__value {
+  font-size: var(--text-2xl);
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.total__note { font-size: var(--text-sm); color: var(--muted-foreground); margin-top: var(--space-1); }
+
+/* --- Renewals ----------------------------------------------------------- */
+.renewals { padding: var(--space-5); }
+.renewal-list { list-style: none; margin: 0; padding: 0; }
+.renewal {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.renewal:last-child { border-bottom: none; }
+.dot {
+  width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--muted-foreground);
+  flex: none;
+}
+.dot--due { background: var(--destructive-dot); }
+.dot--soon { background: var(--warning-dot); }
+.renewal__name { font-weight: 500; }
+.renewal__when { font-size: var(--text-sm); color: var(--muted-foreground); }
+.renewal__when--due { color: var(--destructive); font-weight: 500; }
+.renewal__when--soon { color: var(--warning); font-weight: 500; }
+.renewal__amount { text-align: right; font-size: var(--text-base); font-weight: 500; }
+
+/* --- Category breakdown ------------------------------------------------- */
+.breakdown { padding: var(--space-5); }
+.bar-row { display: grid; gap: var(--space-2); padding: var(--space-2) 0; }
+.bar-row__head { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); }
+.bar-row__amount { color: var(--muted-foreground); }
+.bar { height: 0.375rem; border-radius: 999px; background: var(--muted); overflow: hidden; }
+.bar__fill { height: 100%; background: var(--primary); border-radius: 999px; }
+
+/* --- Filters ------------------------------------------------------------ */
+.filters { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.chip {
+  min-height: 2.75rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease);
+}
+.chip:hover { color: var(--foreground); background: var(--muted); }
+.chip[aria-pressed='true'] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.chip:active { transform: translateY(1px); }
+
+/* --- Subscriptions: stacked cards on a phone, a real table on a laptop ---
+   The ARIA roles are declared explicitly so the semantics survive the
+   display change on mobile (Law 15). --------------------------------------- */
+.subs { padding: var(--space-5); }
+.table { width: 100%; border-collapse: collapse; }
+.table thead { display: none; }
+.table tr {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.table tbody tr:last-child { border-bottom: none; }
+.table td { display: block; padding: 0; }
+.table td[data-label]::before {
+  content: attr(data-label) ' ';
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  display: block;
+}
+.cell-name { font-weight: 500; }
+.cell-name::before { display: none !important; }
+.cell-amount {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+  font-weight: 500;
+}
+.cell-amount::before { display: none !important; }
+.cell-meta { font-size: var(--text-sm); color: var(--muted-foreground); }
+.cell-meta::before { display: none !important; }
+.cell-cycle, .cell-due { font-size: var(--text-sm); }
+
+/* ==========================================================================
+   RESPONSIVE — mobile-first. Base styles above target the phone; every rule
+   below ADDS complexity as the container gets wider (Law 21).
+   @container, not @media, so the Theme Studio width buttons work (T5-1).
+   ========================================================================== */
+@container (min-width: 40rem) {
+  .totals__grid { grid-template-columns: 2fr 1fr 1fr; align-items: end; }
+  .page { padding: var(--space-8) var(--space-6) var(--space-12); gap: var(--space-6); }
+  .header__inner { padding: var(--space-3) var(--space-6); }
+}
+
+@container (min-width: 56rem) {
+  .page { grid-template-columns: 1fr 20rem; }
+  .totals, .subs { grid-column: 1 / -1; }
+
+  /* The stacked cards become a real table once there is room for columns. */
+  .table thead { display: table-header-group; }
+  .table tbody { display: table-row-group; }
+  .table tr { display: table-row; }
+  .table th, .table td { display: table-cell; padding: var(--space-3) var(--space-3); }
+  .table th:first-child, .table td:first-child { padding-left: 0; }
+  .table th:last-child, .table td:last-child { padding-right: 0; }
+  .table td[data-label]::before { display: none; }
+  .table th {
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  /* Law 20: header alignment matches cell alignment, column by column. */
+  .table th.is-num, .table td.is-num { text-align: right; }
+  .table th.is-text, .table td.is-text { text-align: left; }
+  .table tbody tr { border-bottom: 1px solid var(--border); }
+  .table tbody tr:hover { background: var(--muted); }
+  .cell-amount { grid-column: auto; grid-row: auto; }
+}
+</style>
+</head>
+<body>
+<div id="ts_stage">
+
+  <header class="header">
+    <div class="header__inner">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">S</span>
+        <span>Subscription Tracker</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <a href="#" aria-current="page">Dashboard</a>
+        <a href="#">Settings</a>
+      </nav>
+      <button class="btn btn--primary" type="button">Add subscription</button>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- TOTALS — principle 2: the number is the hero -->
+    <section class="card totals" aria-labelledby="totals-heading">
+      <h1 id="totals-heading" class="eyebrow">What you pay</h1>
+      <div class="totals__grid">
+        <div class="total">
+          <div class="total__label">Per month</div>
+          <div class="total__value num">$170.36</div>
+          <div class="total__note">Across 9 subscriptions, normalised to a monthly figure</div>
+        </div>
+        <div class="total total--secondary">
+          <div class="total__label">Per year</div>
+          <div class="total__value num">$2,044.36</div>
+        </div>
+        <div class="total total--secondary">
+          <div class="total__label">Next 30 days</div>
+          <div class="total__value num">$117.45</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RENEWALS — the north-star view -->
+    <section class="card renewals" aria-labelledby="renewals-heading">
+      <h2 id="renewals-heading" class="eyebrow">Renews in the next 30 days</h2>
+      <ul class="renewal-list">
+        <li class="renewal">
+          <span class="dot dot--due" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">PureGym membership</span><br>
+            <span class="renewal__when renewal__when--due">Tomorrow · 9 Sep</span>
+          </span>
+          <span class="renewal__amount num">$24.99</span>
+        </li>
+        <li class="renewal">
+          <span class="dot dot--soon" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">Netflix Standard</span><br>
+            <span class="renewal__when renewal__when--soon">In 3 days · 11 Sep</span>
+          </span>
+          <span class="renewal__amount num">$15.49</span>
+        </li>
+        <li class="renewal">
+          <span class="dot dot--soon" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">Spotify Premium Duo</span><br>
+            <span class="renewal__when renewal__when--soon">In 6 days · 14 Sep</span>
+          </span>
+          <span class="renewal__amount num">$16.99</span>
+        </li>
+        <li class="renewal">
+          <span class="dot" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">iCloud+ 2TB</span><br>
+            <span class="renewal__when">In 10 days · 18 Sep</span>
+          </span>
+          <span class="renewal__amount num">$9.99</span>
+        </li>
+        <li class="renewal">
+          <span class="dot" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">GitHub Copilot</span><br>
+            <span class="renewal__when">In 20 days · 28 Sep</span>
+          </span>
+          <span class="renewal__amount num">$10.00</span>
+        </li>
+        <li class="renewal">
+          <span class="dot" aria-hidden="true"></span>
+          <span>
+            <span class="renewal__name">PlayStation Plus Extra</span><br>
+            <span class="renewal__when">In 27 days · 5 Oct</span>
+          </span>
+          <span class="renewal__amount num">$39.99</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- CATEGORY BREAKDOWN -->
+    <section class="card breakdown" aria-labelledby="breakdown-heading">
+      <h2 id="breakdown-heading" class="eyebrow">Where it goes each month</h2>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Software</span><span class="bar-row__amount num">$72.99</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 100%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Health &amp; Fitness</span><span class="bar-row__amount num">$24.99</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 34%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Music &amp; Audio</span><span class="bar-row__amount num">$16.99</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 23%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>News &amp; Reading</span><span class="bar-row__amount num">$16.58</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 23%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Streaming</span><span class="bar-row__amount num">$15.49</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 21%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Gaming</span><span class="bar-row__amount num">$13.33</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 18%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row__head"><span>Cloud &amp; Hosting</span><span class="bar-row__amount num">$9.99</span></div>
+        <div class="bar"><div class="bar__fill" style="width: 14%"></div></div>
+      </div>
+    </section>
+
+    <!-- ALL SUBSCRIPTIONS -->
+    <section class="card subs" aria-labelledby="subs-heading">
+      <h2 id="subs-heading" class="eyebrow">All subscriptions</h2>
+
+      <div class="filters" role="group" aria-label="Filter by category">
+        <button class="chip" type="button" aria-pressed="true">All</button>
+        <button class="chip" type="button" aria-pressed="false">Software</button>
+        <button class="chip" type="button" aria-pressed="false">Streaming</button>
+        <button class="chip" type="button" aria-pressed="false">Music &amp; Audio</button>
+        <button class="chip" type="button" aria-pressed="false">Health &amp; Fitness</button>
+      </div>
+
+      <table class="table" role="table">
+        <thead>
+          <tr role="row">
+            <th class="is-text" scope="col" role="columnheader">Name</th>
+            <th class="is-text" scope="col" role="columnheader">Category</th>
+            <th class="is-text" scope="col" role="columnheader">Cycle</th>
+            <th class="is-text" scope="col" role="columnheader">Next renewal</th>
+            <th class="is-num" scope="col" role="columnheader">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">PureGym membership</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Health &amp; Fitness</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Monthly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">9 Sep 2026</td>
+            <td class="is-num cell-amount num" role="cell">$24.99</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">Netflix Standard</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Streaming</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Monthly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">11 Sep 2026</td>
+            <td class="is-num cell-amount num" role="cell">$15.49</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">Spotify Premium Duo</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Music &amp; Audio</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Monthly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">14 Sep 2026</td>
+            <td class="is-num cell-amount num" role="cell">$16.99</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">iCloud+ 2TB</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Cloud &amp; Hosting</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Monthly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">18 Sep 2026</td>
+            <td class="is-num cell-amount num" role="cell">$9.99</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">GitHub Copilot</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Software</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Monthly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">28 Sep 2026</td>
+            <td class="is-num cell-amount num" role="cell">$10.00</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">PlayStation Plus Extra</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Gaming</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Quarterly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">5 Oct 2026</td>
+            <td class="is-num cell-amount num" role="cell">$39.99</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">Adobe Creative Cloud</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Software</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Yearly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">2 Nov 2026</td>
+            <td class="is-num cell-amount num" role="cell">$659.88</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">The Economist</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">News &amp; Reading</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Yearly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">14 Feb 2027</td>
+            <td class="is-num cell-amount num" role="cell">$199.00</td>
+          </tr>
+          <tr role="row">
+            <td class="is-text cell-name" role="cell">Notion Plus</td>
+            <td class="is-text cell-meta" data-label="Category" role="cell">Software</td>
+            <td class="is-text cell-cycle" data-label="Cycle" role="cell">Yearly</td>
+            <td class="is-text cell-due" data-label="Next renewal" role="cell">21 Mar 2027</td>
+            <td class="is-num cell-amount num" role="cell">$96.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== THEME STUDIO (dev-only; delete this whole block for the production build) ===== -->
+<style>
+  .ts-open{position:fixed;right:18px;bottom:18px;z-index:2147483640;border:none;border-radius:999px;padding:13px 18px;font:inherit;font-weight:700;font-size:14px;background:var(--primary);color:var(--primary-foreground);cursor:pointer;box-shadow:0 8px 24px oklch(0 0 0 / .25);font-family:var(--font-sans)}
+  .ts-open:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .ts{position:fixed;right:0;top:0;height:100%;width:330px;max-width:88vw;z-index:2147483646;background:var(--card);border-left:1px solid var(--border);box-shadow:-8px 0 30px oklch(0 0 0 / .2);transform:translateX(100%);transition:transform 160ms ease;overflow:auto;padding:20px;font-family:var(--font-sans);color:var(--foreground)}
+  body.ts-on .ts{transform:translateX(0)} body.ts-on .ts-scrim{position:fixed;inset:0;z-index:2147483645;background:oklch(0 0 0 / .35)}
+  .ts h3{font-size:17px;font-weight:800} .ts .close{position:absolute;right:14px;top:16px;border:none;background:var(--muted);color:var(--foreground);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px}
+  .ts .grp{margin-top:18px} .ts .glab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-foreground);margin-bottom:8px}
+  .ts .sw{width:38px;height:38px;border-radius:10px;border:2px solid var(--border);cursor:pointer} .ts .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .ts .seg{display:flex;background:var(--muted);border-radius:10px;padding:3px;gap:3px} .ts .seg button{flex:1;border:none;background:transparent;color:var(--muted-foreground);font:inherit;font-weight:600;font-size:13px;padding:8px;border-radius:7px;cursor:pointer}
+  .ts .seg button.on{background:var(--card);color:var(--foreground)} .ts .row{display:flex;align-items:center;gap:10px}
+  .ts input[type=color]{width:46px;height:34px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer} .ts select,.ts input[type=range]{flex:1;font:inherit;font-size:13px;padding:7px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground)}
+  .ts .aa{margin-top:8px;background:var(--muted);border-radius:10px;padding:12px;font-size:13px} .ts .aa .line{display:flex;justify-content:space-between;padding:4px 0} .ts .aa .v{font-family:monospace;font-weight:600}
+  .ts .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px} .ts .ok{color:var(--success,oklch(.55 .14 150));background:oklch(.55 .14 150 / .16)} .ts .bad{color:oklch(.55 .2 27);background:oklch(.55 .2 27 / .16)}
+  .ts textarea{width:100%;height:110px;margin-top:8px;font-family:monospace;font-size:11px;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--background);color:var(--foreground)}
+  .ts .exp{width:100%;margin-top:8px;border:none;border-radius:8px;padding:10px;font:inherit;font-weight:700;font-size:13px;background:var(--primary);color:var(--primary-foreground);cursor:pointer}
+</style>
+<button class="ts-open" id="tsOpen">&#127912; Theme Studio</button>
+<div class="ts-scrim" id="tsScrim"></div>
+<aside class="ts" id="ts" aria-label="Theme studio">
+  <h3>Theme Studio</h3><button class="close" id="tsClose" aria-label="Close">&times;</button>
+  <div class="grp"><div class="glab">Starter looks</div><div class="swatches" id="presets"></div></div>
+  <div class="grp"><div class="glab">Accent</div><div class="row"><input type="color" id="ts_accent" value="#25596e" aria-label="Accent colour"><span style="font-size:12px;color:var(--muted-foreground)">Text auto-adjusts for contrast.</span></div></div>
+  <div class="grp"><div class="glab">Mode</div><div class="seg" id="ts_mode"><button data-m="light">Light</button><button data-m="dark">Dark</button><button data-m="system">System</button></div></div>
+  <div class="grp"><div class="glab">Preview width</div><div class="seg" id="ts_vw"><button data-w="375">Mobile</button><button data-w="768">Tablet</button><button data-w="0" class="on">Desktop</button></div></div>
+  <div class="grp"><div class="glab">Base text size</div><div class="seg" id="ts_size"><button data-s="14">14</button><button data-s="15">15</button><button data-s="16" class="on">16</button><button data-s="17">17</button><button data-s="18">18</button></div></div>
+  <div class="grp"><div class="glab">Font</div><div class="row"><select id="ts_font"><option value="var(--font-sans)">Default</option><option value='"Plus Jakarta Sans",sans-serif'>Plus Jakarta Sans</option><option value='"Space Grotesk",sans-serif'>Space Grotesk</option><option value='"IBM Plex Sans",sans-serif'>IBM Plex Sans</option></select></div></div>
+  <div class="grp"><div class="glab">Roundness</div><div class="row"><input type="range" id="ts_radius" min="0" max="1.6" step="0.05" value="0.375"></div></div>
+  <div class="grp"><div class="glab">Accessibility (live WCAG AA)</div><div class="aa"><div class="line"><span>Button text on accent</span><span><span class="v" id="ts_aaBtnV"></span> <span class="pill" id="ts_aaBtnP"></span></span></div><div class="line"><span>Body text on background</span><span><span class="v" id="ts_aaBodyV"></span> <span class="pill" id="ts_aaBodyP"></span></span></div></div></div>
+  <div class="grp"><div class="glab">Finalize &rarr; DESIGN.md tokens</div><button class="exp" id="ts_export">Export tokens (light + dark)</button><textarea id="ts_out" readonly placeholder="Click Export to capture the tokens you finalized -> paste into DESIGN.md section 2."></textarea></div>
+</aside>
+<script>
+(function(){
+  // OKLCH/hex -> WCAG contrast (same math as audit.py)
+  var sl=function(c){c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)};
+  function lh(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c}).join('');return .2126*sl(parseInt(h.slice(0,2),16))+.7152*sl(parseInt(h.slice(2,4),16))+.0722*sl(parseInt(h.slice(4,6),16))}
+  function lo(L,C,H){var h=H*Math.PI/180,a=C*Math.cos(h),b=C*Math.sin(h),l=L+.3963377774*a+.2158037573*b,m=L-.1055613458*a-.0638541728*b,s=L-.0894841775*a-1.291485548*b;l=l*l*l;m=m*m*m;s=s*s*s;var R=4.0767416621*l-3.3077115913*m+.2309699292*s,G=-1.2684380046*l+2.6097574011*m-.3413193965*s,B=-.0041960863*l-.7034186147*m+1.707614701*s;R=Math.min(1,Math.max(0,R));G=Math.min(1,Math.max(0,G));B=Math.min(1,Math.max(0,B));return .2126*R+.7152*G+.0722*B}
+  function lum(v){v=(v||'').trim();var m=v.match(/oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/i);if(m)return lo(+m[1],+m[2],+m[3]);m=v.match(/#([0-9a-fA-F]{3,6})/);if(m)return lh(m[0]);return null}
+  function ct(a,b){var x=lum(a),y=lum(b);if(x==null||y==null)return null;var hi=Math.max(x,y),lo2=Math.min(x,y);return (hi+.05)/(lo2+.05)}
+  var rs=document.documentElement.style, cs=function(){return getComputedStyle(document.documentElement)};
+  function setAccent(v){rs.setProperty('--primary',v);rs.setProperty('--accent',v);rs.setProperty('--ring',v);var L=lum(v),fg=(L!=null&&L>.45)?'oklch(0.20 0.02 265)':'oklch(0.99 0.005 265)';rs.setProperty('--primary-foreground',fg);rs.setProperty('--accent-foreground',fg);aa()}
+  function paint(id,r){document.getElementById(id+'V').textContent=r?r.toFixed(2)+':1':'-';var p=document.getElementById(id+'P'),ok=r&&r>=4.5;p.textContent=ok?'AA':(r&&r>=3?'large':'FAIL');p.className='pill '+(ok?'ok':'bad')}
+  function aa(){var c=cs();paint('ts_aaBtn',ct(c.getPropertyValue('--primary-foreground'),c.getPropertyValue('--primary')));paint('ts_aaBody',ct(c.getPropertyValue('--foreground'),c.getPropertyValue('--background')))}
+  // Vetted Calm Authority accents (palettes.md): Teal-Slate (default), Slate-Indigo, Forest.
+  var PRESETS=[['Teal-Slate','oklch(0.48 0.09 230)'],['Slate-Indigo','oklch(0.50 0.13 265)'],['Forest','oklch(0.50 0.12 155)']];
+  var pc=document.getElementById('presets');PRESETS.forEach(function(p){var b=document.createElement('button');b.className='sw';b.title=p[0];b.style.background=p[1];b.onclick=function(){setAccent(p[1])};pc.appendChild(b)});
+  document.getElementById('ts_accent').addEventListener('input',function(e){setAccent(e.target.value)});
+  document.getElementById('ts_font').addEventListener('change',function(e){rs.setProperty('--font-sans',e.target.value)});
+  document.getElementById('ts_radius').addEventListener('input',function(e){rs.setProperty('--radius',e.target.value+'rem')});
+  function seg(id,fn){var el=document.getElementById(id);el.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;[].forEach.call(el.children,function(x){x.classList.remove('on')});b.classList.add('on');fn(b)})}
+  seg('ts_mode',function(b){var el=document.documentElement,m=b.dataset.m;el.classList.remove('dark');el.classList.remove('light');if(m==='dark')el.classList.add('dark');else if(m==='light')el.classList.add('light');aa()});
+  seg('ts_vw',function(b){var st=document.getElementById('ts_stage')||document.body;var w=+b.dataset.w;if(w){st.style.maxWidth=w+'px';st.style.margin='14px auto';st.style.border='1px solid var(--border)';st.style.borderRadius='20px';st.style.overflow='hidden'}else{st.style.maxWidth='';st.style.border='';st.style.borderRadius='';st.style.margin=''}});
+  seg('ts_size',function(b){rs.setProperty('--font-size-base',b.dataset.s+'px')});
+  var body=document.body;document.getElementById('tsOpen').onclick=function(){body.classList.add('ts-on')};document.getElementById('tsClose').onclick=function(){body.classList.remove('ts-on')};document.getElementById('tsScrim').onclick=function(){body.classList.remove('ts-on')};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')body.classList.remove('ts-on')});
+  (function(){var el=document.documentElement,m=el.classList.contains('dark')?'dark':el.classList.contains('light')?'light':'system';var sg=document.getElementById('ts_mode');[].forEach.call(sg.children,function(b){b.classList.toggle('on',b.dataset.m===m)})})();
+  var KEYS=['--background','--foreground','--card','--card-foreground','--muted','--muted-foreground','--primary','--primary-foreground','--accent','--accent-foreground','--border','--ring','--radius','--font-size-base','--font-sans'];
+  document.getElementById('ts_export').onclick=function(){var el=document.documentElement,was=el.classList.contains('dark');function rd(){var c=cs();return KEYS.map(function(k){return '  '+k+': '+c.getPropertyValue(k).trim()+';'}).join('\n')}el.classList.remove('dark');var L=rd();el.classList.add('dark');var D=rd();if(!was)el.classList.remove('dark');document.getElementById('ts_out').value=':root {\n'+L+'\n}\n.dark {\n'+D+'\n}\n'};
+  aa();
+})();
+</script>
+<!-- ===== /THEME STUDIO ===== -->
+</body>
+</html>

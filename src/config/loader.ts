@@ -85,13 +85,25 @@ const productSchema = z.object({
  * rather than run on a guessed credential. Overrides are optional.
  * ------------------------------------------------------------------ */
 
+const FORBIDDEN_SECRETS = new Set([
+  'replace-me-with-32-plus-random-characters-abcd',
+  'changeme-changeme-changeme-changeme',
+  '12345678901234567890123456789012',
+])
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   APP_ORIGIN: z.string().url(),
 
   // --- secrets (required, never defaulted) ---
   DATABASE_URL: z.string().min(1),
-  BETTER_AUTH_SECRET: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
+  BETTER_AUTH_SECRET: z
+    .string()
+    .min(32, 'BETTER_AUTH_SECRET must be at least 32 characters')
+    .refine((val) => !FORBIDDEN_SECRETS.has(val), {
+      message:
+        'BETTER_AUTH_SECRET cannot be a known example/placeholder constant. Generate a random secret.',
+    }),
   SENTRY_DSN: z.string().optional(),
 
   // --- optional overrides of platform.yaml ---

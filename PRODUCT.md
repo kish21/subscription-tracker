@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Structure · AI product? no_
+_Last updated: 2026-09-08 · Stage: Contracts · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -154,29 +154,71 @@ _Last updated: 2026-09-08 · Stage: Structure · AI product? no_
 - **Has user-facing UI: YES** → `/design-system` runs next, before any screens are built.
 
 ## Design             <!-- /design-system --> (UI products only; see DESIGN.md for the full system)
-- **Has user-facing UI?** <yes/no — if no, this phase is skipped intentionally>
-- **Design principles (4–6, derived from vision):**
-- **Archetype (aesthetic family + why it fits):**
+- **Has user-facing UI?** YES (Web application dashboard for personal recurring subscription tracking).
+- **Design principles (5, derived from vision):**
+  1. Calm Financial Clarity (no sensory overload, clean slate canvas)
+  2. Tabular Numeric Discipline (JetBrains Mono, right-aligned currency, tabular-nums)
+  3. Restraint & Single Accent (Deep Teal-Slate `oklch(0.48 0.09 230)` / `oklch(0.66 0.10 220)`)
+  4. Thumb-First Mobile Ergonomics (touch targets >= 44px, mobile table-to-card reflow)
+  5. Quiet Restraint in Motion (Tier 0 CSS transitions only, 140ms ease, opacity/transform only)
+- **Archetype (aesthetic family + why it fits):** Calm Authority / Trust (with Data-Dense Pro precision). Fits personal finance where clarity, credibility, and dense scannability outweigh marketing flare.
 - **Foundations summary (font pairing · base body size + type scale · one accent + palette · density · depth · motion):**
-- **Tokens:** shadcn/ui-compatible CSS variables (OKLCH), WCAG-AA verified — see `DESIGN.md`
-- **Approved sample page (path):** · **DESIGN.md (path):**
+  - Fonts: `Geist` (display/body) + `JetBrains Mono` (numbers/data/dates)
+  - Base body: 16px (1rem), Scale ratio 1.20 (Minor Third)
+  - Colors: Dominant Cool Neutral/Slate + Deep Teal-Slate accent (`oklch(0.48 0.09 230)` light / `oklch(0.66 0.10 220)` dark)
+  - Density: Medium-compact (financial dashboard), max-width 1200px
+  - Depth: Hairline borders (`1px solid var(--border)`), subtle elevation (`--shadow-sm` on cards), zero nested cards
+  - Motion: Tier 0 CSS transitions (140ms, transform/opacity only), full reduced-motion support
+- **Tokens:** shadcn/ui-compatible CSS variables (OKLCH), WCAG-AA verified (Light: 15.74:1 body, 6.22:1 btn; Dark: 14.85:1 body, 6.88:1 btn) — see `DESIGN.md`.
+- **Approved sample page (path):** `preview.html` · **DESIGN.md (path):** `DESIGN.md`
 
 ## Foundation        <!-- /foundation -->
-- **Runs end-to-end (walking skeleton):**
-- **Config flows verified (no dead config):**
+- **Runs end-to-end (walking skeleton):** YES. Next.js 16 (Turbopack) boots in 522ms; `GET /api/health` returns HTTP 200/503 with structured JSON (`status`, `version`, `timestamp`, `env`, `database` connectivity & latency); root route `/` renders walking skeleton view. Verified live against `http://localhost:3000`.
+- **Config flows verified (no dead config):** Verified by `tests/unit/config.test.ts` (6 passing tests). Three-tier layering works: `platform.yaml` + `product.yaml` loaded, `.env` overrides flow through, read back at runtime.
 - **Fail-loud/fail-closed guards · secret-scan + dependency-vuln scan · CI mirrors prod:**
+  - Fail-loud guards refuse boot on missing `BETTER_AUTH_SECRET`, `< 32` char secrets, known placeholder constants, missing `DATABASE_URL`, and `ERROR_REPORTER=sentry` without `SENTRY_DSN`.
+  - Secret scan: `gitleaks` via `.gitleaks.toml` and GitHub Actions.
+  - Dep-vuln scan: `pnpm audit` verified clean (0 vulnerabilities after esbuild override).
+  - CI: `.github/workflows/ci.yml` runs lint/format (Biome), typecheck (TypeScript), secret scan (Gitleaks), dep scan (`pnpm audit`), and test+build against Postgres 18 container.
 - **pre-commit + CI auto-run (lint/format/secret-scan/tests) · runs in its container · async-safe:**
+  - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` all pass cleanly with 0 errors.
+  - Dependabot bot active in `.github/dependabot.yml`.
+  - Event loop unblocked: async pool with statement and connection timeouts.
 - **Observability wired (tracing / error-reporter, even a stub):**
+  - Structured JSON logging via `pino` with request IDs and secret redaction (`src/infra/logger.ts`).
+  - Standardized error hierarchy (`src/infra/errors.ts`).
+  - Error reporter adapter (`src/providers/error-reporter.ts` with noop/sentry).
+  - Deterministic clock adapter (`src/providers/clock.ts` with `SystemClock` / `FixedClock`).
 
 ## Contracts         <!-- /contracts -->
 - **Typed models / schemas / migrations:**
+  - **Core Domain Entities:** Defined as pure TypeScript models in `src/domain/types.ts` (`Subscription`, `User`, `BillingCycle`, `Category`, `UpcomingRenewalItem`, `CategorySpendBreakdown`, `DashboardSummary`).
+  - **Boundary Contracts:** Typed Zod schemas with inferred TS types in `src/schemas/` (`auth.ts`, `subscription.ts`, `dashboard.ts`, `events.ts`, `common.ts`). All endpoint payloads strictly typed; no `any` crosses boundaries.
+  - **Persistence Schema:** Drizzle ORM in `src/db/schema/index.ts` declaring 6 tables (`user`, `session`, `account`, `verification`, `subscriptions`, `system_heartbeat`) with relational bindings and cascading deletes.
+  - **Migrations Audit:** Schema changes via checked-in SQL files only. Initial migration `drizzle/0000_overconfident_ultimates.sql` generated via `drizzle-kit generate`. `db push` forbidden against deployed DBs.
+  - **Registry Pinning & Golden Fixtures:** Pinned by `tests/unit/contracts-pin.test.ts` (12 tests) ensuring `product.yaml` categories, billing cycles, allowed currencies, and migration SQL columns are in lockstep. Seed fixture committed in `tests/fixtures/subscriptions.fixture.json`.
 - **Boundary units/scale agreed:**
+  - **Money:** Stored and exchanged strictly as **integer minor units** (`priceMinorUnits` in cents/pence/paise, integer >= 0). ADR-004 enforced; floats rejected at boundary and in domain arithmetic (`toMinorUnits`, `fromMinorUnits`).
+  - **Dates:** Stored as PostgreSQL `date` (`DATE`); boundary wires strictly use ISO-8601 calendar strings (`YYYY-MM-DD`). Timezone-neutral calendar date representation prevents midnight shifting bugs.
+  - **Billing Cycles:** Mapped explicitly to months: `monthly` = 1, `quarterly` = 3, `semiannual` = 6, `yearly` = 12. Normalisation arithmetic uses integer division and rounding once at display.
+  - **Percentage:** Bounded 0.0 to 100.0 (percentage scale, not fraction 0.0 to 1.0) and rounded to 1 decimal place at boundary.
+  - **Window:** Integer days (30 days default from `product.yaml`).
+  - **Currency:** ISO-4217 3-letter code (`USD`, `EUR`, `GBP`, `INR`, `CAD`, `AUD`) chosen at signup and inherited by all subscriptions.
 - **Contract versioning / back-compat approach:**
+  - REST endpoints versioned under `/api/v1/` (`/api/v1/auth/*`, `/api/v1/subscriptions/*`, `/api/v1/dashboard`). Health check at `/api/health`.
+  - Additive-only schema evolution (new optional fields allowed without major bump; breaking changes require `/api/v2/`).
+  - Standard JSON response envelope: `{ "success": true, "data": ... }` and `{ "success": false, "error": { "code", "message", "details" } }`.
+  - Documented in OpenAPI 3.1 specification (`docs/api/openapi.json`) and `docs/contracts.md`.
 - **PII/sensitive fields classified · tenant-owner key · idempotency/natural key:**
+  - **PII Classification:** Passwords hashed with Argon2id / bcrypt via Better Auth. User email classified as sensitive PII. Subscription financial prices and names are NEVER logged or exported to analytics.
+  - **Tenant / Owner Key:** Every subscription requires owning `userId` referencing `user.id`. Enforced as a required argument on repository methods (ADR-005). Fast lookup via compound index `(user_id, next_renewal_date)`. Handlers fail closed (404 on unowned records, preventing id enumeration).
+  - **Natural & Idempotency Keys:** User natural key is unique normalized `email`. Subscription creation supports optional client `idempotencyKey` backed by compound unique index `(user_id, idempotency_key)`.
+  - **North-Star Event Contract:** Structured log event `renewals_viewed` emitted server-side carrying only `userId`, `timestamp`, `upcomingCount`, `windowDays`, with zero financial or subscription content.
 
 ## Build log         <!-- /build --> (one entry per feature; see docs/features/*)
 | Feature | DoD (incl. security) met? | How verified | Doc |
 |---|---|---|---|
+| M1-SLICE-01 Authentication & Session Lifecycle | YES (Argon2/bcrypt KDF in DB, httpOnly Lax cookie, fail-closed guards, Zod boundary validation, no secrets) | Integration suite (12 tests against Postgres), unit suite (29 tests), frontend-audit (0 errors), live browser signup/login/logout flow | [docs/features/auth.md](docs/features/auth.md) |
 
 ## Dev-complete      <!-- /dev-check -->
 - [ ] Every core-scope feature built & runs
