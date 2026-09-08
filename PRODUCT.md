@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Build (M1-SLICE-01 completed, M1-SLICE-02 next) · AI product? no_
+_Last updated: 2026-09-08 · Stage: Build (M1-SLICE-02 completed, M1-SLICE-03 next) · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -219,6 +219,7 @@ _Last updated: 2026-09-08 · Stage: Build (M1-SLICE-01 completed, M1-SLICE-02 ne
 | Feature | DoD (incl. security) met? | How verified | Doc |
 |---|---|---|---|
 | M1-SLICE-01 Authentication & Session Lifecycle | YES (Argon2/bcrypt KDF in DB, httpOnly Lax cookie, fail-closed guards, Zod boundary validation, no secrets) | Integration suite (12 tests against Postgres), unit suite (29 tests), frontend-audit (0 errors), live browser signup/login/logout flow | [docs/features/auth.md](docs/features/auth.md) |
+| M1-SLICE-02 Subscription Domain & Storage Seam | YES (Tenant isolation on all queries ADR-005, integer minor units ADR-004, fail-closed 401, log redaction, idempotency guard) | Integration suite (10 tests in subscriptions.test.ts against Postgres), unit suite (15 tests in calculations.test.ts), live HTTP curl/fetch (signup, create, list) | [docs/features/subscriptions-crud.md](docs/features/subscriptions-crud.md) |
 
 ## Dev-complete      <!-- /dev-check -->
 - [ ] Every core-scope feature built & runs
@@ -241,6 +242,7 @@ _Last updated: 2026-09-08 · Stage: Build (M1-SLICE-01 completed, M1-SLICE-02 ne
 ## Ship log          <!-- /ship -->
 | Date | What shipped | Review + /security-review | Docs reconciled | CHANGELOG | Rollback / flag | PR |
 |---|---|---|---|---|---|---|
+| 2026-09-08 | M1-SLICE-02 Subscription Domain & Storage Seam | DEEP: adversarial isolation, integer minor units, 44 unit + 24 integration tests passed, race condition [ADHOC-03] & wildcard escaping [ADHOC-04] fixed | docs/features/subscriptions-crud.md & docs/issues/ reconciled | Updated [Unreleased] in CHANGELOG.md | git revert / migration-down | [PR: M1-SLICE-02](https://github.com/kish21/subscription-tracker/pulls) |
 
 ## Learnings         <!-- /learn -->
 - **Success metric + result (instrumented, not guessed):**
