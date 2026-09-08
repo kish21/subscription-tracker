@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-07 · Stage: Plan · AI product? no_
+_Last updated: 2026-09-08 · Stage: Architecture · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -34,12 +34,9 @@ _Last updated: 2026-09-07 · Stage: Plan · AI product? no_
 - **Business model (free / paid / internal):** Free. No paid tier planned; no AI/LLM features.
 
 ## Validation        <!-- /validate --> (test the riskiest assumption BEFORE code; append a dated entry per run)
-- **Assumption under test (falsifiable: <user> will <behaviour> because <reason>):**
-- **Experiment (type · who it reaches · time box · due date):**
-- **Pass/fail threshold (written BEFORE the result):**
-- **Measured result (number / quoted evidence · date · raw notes in docs/validation/):**
-- **Verdict (proceed / pivot / kill) + one-line reason:**
-- **Override (only if skipped: date · reason · "assumption untested"):**
+- **Assumption under test (falsifiable: <user> will <behaviour> because <reason>):** Individuals with 5+ recurring subscriptions will manually input and track subscriptions weekly without bank syncing.
+- **Override 2026-09-07:** Skipped by user decision (building directly for personal/project use) — assumption untested.
+
 
 ## Scope             <!-- /scope -->
 - **THE core feature (the one thing):** The subscriptions dashboard: one screen listing every subscription with cost and next renewal date, showing total monthly and yearly spend and what renews in the next 30 days. Everything else feeds this screen.
@@ -94,11 +91,46 @@ _Last updated: 2026-09-07 · Stage: Plan · AI product? no_
   - **product — NOW:** vision, scope, north star, riskiest assumption, business model all recorded above. Roadmap = this section. Riskiest-assumption check is scheduled at /learn after M3: are people re-entering data weekly?
 
 ## Architecture      <!-- /architect -->
+- **System kind:** Web app (server-rendered, single-user data, CRUD + arithmetic). **User-facing UI: YES** → `/design-system` runs after `/structure`. Not an AI product.
 - **Stack + tools (and why, 2026 OSS-first):**
+  - **Next.js (App Router) + React + TypeScript** — one app serves pages and API; no network hop between our own code at this size. Node runtime only (no edge-only APIs) to stay host-agnostic.
+  - **Tailwind CSS + shadcn/ui** — the Design section already commits to shadcn-compatible OKLCH tokens; this is the stack that consumes them. Components are copied into the repo (owned, not a dependency).
+  - **PostgreSQL** — relational data with real constraints and a real `DATE` type for renewal dates; on the free tier of every host. (SQLite rejected: M3 requires a hosted deploy with durable, backup-able storage.)
+  - **Drizzle ORM + drizzle-kit** — typed queries, and migrations as **checked-in SQL files**, which is what "schema only via migrations" requires. (Prisma rejected: heavier runtime + engine binary for no gain here.)
+  - **Better Auth** — self-hosted, OSS, first-class email+password with DB-backed httpOnly cookie sessions and a built-in DB-backed rate limiter. (Clerk/Auth0 rejected: paid, and hosting account data with a third party cuts against the vision's privacy promise. NextAuth rejected: credentials + DB sessions is an explicitly discouraged path there.)
+  - **Zod** — one schema per boundary payload; TS types are *inferred* from it, so validation and types cannot drift.
+  - **pino** — structured JSON logs with a request id; also the transport for the north-star event.
+  - **Vitest** (unit + integration) · **Playwright** (E2E) · **Testcontainers or docker-compose Postgres** for integration against a real DB.
+  - **Biome** (lint+format, one tool) · **lefthook** (pre-commit) · **gitleaks** (secret scan) · **osv-scanner / `pnpm audit`** (dependency vulns) · **pnpm** · **Docker + docker-compose** · **Makefile** · **GitHub Actions** mirroring the prod bootstrap.
+  - **Paid anything: none.** All OSS, all free-tier-runnable. Trigger to spend: free-tier limits hit by real usage (already recorded in Scope#Deferred → paid tier).
 - **Key decisions / ADRs (patterns applied · anti-patterns avoided):**
+  - **Patterns applied:** (1) **Ports & adapters** — every external sits behind an interface chosen by config. (2) **Layered vertical slices** — `route handler → service → repository`, one slice per feature; dependencies point inward, business logic never imports Drizzle or Better Auth. (3) **Typed contracts end-to-end** — the Zod schema is the single source; no raw `any` crosses a boundary.
+  - **Anti-patterns consciously avoided:** distributed monolith (no split backend); vendor lock-in (no host-proprietary runtime APIs); **floats for money**; business logic inside React components or route handlers; tokens in `localStorage`; a god `utils.ts`; N+1 queries on the dashboard.
+  - **ADR-001 — One Next.js app, not a split backend+frontend.** *Why:* a solo CRUD app with one screen; a split doubles deploys, test setups and failure modes for zero benefit. *Rejected:* FastAPI backend + Next frontend (distributed monolith at this scale). *Revisit trigger:* a non-web client (native app) leaves Scope#Deferred.
+  - **ADR-002 — Better Auth, self-hosted, DB-backed httpOnly cookie sessions.** *Why:* the vision promises the user's data stays in our system, and auth is the easiest place to break that promise. Cookie sessions (httpOnly, Secure, SameSite=Lax) are revocable server-side; localStorage tokens are not. *Rejected:* Clerk/Auth0 (paid + third-party data custody), NextAuth credentials provider.
+  - **ADR-003 — Postgres, schema changed only by checked-in migration files.** *Why:* migrations are the audit trail of the schema. `drizzle-kit generate` produces SQL into `drizzle/`, committed and reviewed; `drizzle-kit migrate` applies it as an explicit deploy step. **`db push` is never run against a deployed database**, and the schema is never hand-edited. *Rejected:* SQLite (M3 needs hosted durable storage), auto-sync schema tooling.
+  - **ADR-004 — Money is stored and computed as integer minor units (cents), never a float.** *Why:* the whole product is a sum of prices; binary floats make totals wrong in ways that are hard to see and impossible to defend. Cycle normalisation (yearly→monthly etc.) is integer arithmetic, with rounding applied once, at display. *Rejected:* JS `number` for currency, `float8` columns.
+  - **ADR-005 — Every repository method takes the owning `userId`; there is no query path without it.** *Why:* the M1/M2 exit criteria require proving user B cannot see or touch user A's rows. Making ownership a *required argument of the data layer* turns "forgot the authz check" into a compile error rather than a code-review miss. Handlers fail **closed**: no session → 401; row not owned → 404 (not 403, so ids are not enumerable).
+  - **ADR-006 — The north-star metric is a structured log event, not an analytics vendor.** *Why:* it is one counter (renewals view rendered for a logged-in user), and shipping user behaviour to a third party contradicts the privacy proposition. The event carries `user_id` + timestamp and **no subscription content**, and is readable from logs with one documented command (M3 exit criterion). *Rejected:* PostHog/GA/Plausible for now — trigger to revisit: the metric can no longer be read from logs (already in Scope#Deferred → analytics dashboard).
+  - **ADR-007 — Host-agnostic container; deploy target chosen at M3, not now.** *Why:* choosing a host at M0 leaks its primitives into the code. The app must run identically from `docker compose up` locally and from the same image in production: standard `pg` driver, no serverless-only client, no host-proprietary APIs. *Rejected:* building on one platform's runtime/storage primitives.
 - **Externals behind provider/adapter interfaces (+ resilience strategy each):**
+
+  | External | Port (interface) | Adapter(s), config-selected | Resilience strategy |
+  |---|---|---|---|
+  | Postgres | `UserRepository`, `SubscriptionRepository` (every method takes `userId`) | Drizzle / `pg` | Pool size, connect + statement timeouts from `.env`; retry **transient connection errors only** (2 attempts, exponential backoff); never retry a write that may have applied without a natural key; errors logged and surfaced, never swallowed |
+  | Auth / session | `SessionReader.getCurrentUser(req) → AuthenticatedUser \| null` | Better Auth | **Fail-closed**: any error reading a session is treated as unauthenticated (401), never as "probably fine". Rate limiter (Better Auth, DB-backed so it holds across instances) on signup/login, thresholds from `.env`, enabled at M3 |
+  | Error reporting | `ErrorReporter.capture(err, ctx)` | `noop` (M0/dev) → `sentry` (M3), selected by `ERROR_REPORTER` env | Fire-and-forget with a timeout; a reporting failure must never fail a user request |
+  | Logging | `Logger` | pino (JSON, request-id middleware) | Never throws; level from `.env`; no PII or subscription content in the north-star event |
+  | Time | `Clock.now()` | `system` \| `fixed` (tests) | Exists so renewal-date maths is deterministic and testable; all comparisons in UTC |
+  | Email | `EmailSender` — **N/A now**, port name reserved | none | Trigger: renewal reminders leave Scope#Deferred, or password-reset / email-verification is added |
+
+  - **Rule this table enforces:** no vendor SDK is imported in a service or a React component — only inside its adapter in the infrastructure layer.
 - **Resilience · perf/cost budget · migrations approach:**
-- **(AI) prompt-versioning · eval harness · tracing:**
+  - **Resilience:** fail-**closed** on anything auth/ownership; fail-**loud** at boot — a Zod-validated env schema, where a missing or malformed variable aborts startup rather than defaulting silently; graceful degradation only where it is safe (error reporter down → keep serving).
+  - **Perf/cost budget — ⚠️ ASPIRATIONAL, not measured.** No code exists yet, so this is not probed. **Dominant cost named:** the dashboard render = Postgres round-trip(s) over the user's rows + SSR. **Budget to hold:** dashboard p95 server response **< 400 ms** with 200 subscriptions on free-tier hosting, and **≤ 3 DB queries per dashboard render** (list · totals · upcoming — collapsed further if measurement says so; this is the N+1 guard). **Cost: $0/month** (no metered externals, no LLM). **Committed: re-measure both at `/eval` and replace these numbers with the measured ones.**
+  - **Migrations:** per ADR-003 — `drizzle-kit generate` → SQL files in `drizzle/`, committed and code-reviewed; applied by an explicit `drizzle-kit migrate` step in the container's start/deploy path; CI runs migrations from an empty database on every build so a broken migration fails before merge; no `db push` against a deployed DB; schema never hand-edited.
+  - **No hardcoding / no secrets in code:** every value — `DATABASE_URL`, `BETTER_AUTH_SECRET`, session TTL, rate-limit thresholds, pool size + timeouts, log level, `ERROR_REPORTER` + DSN, default currency, app origin for CORS — lives in `.env`, is validated by the env schema at boot, and is documented in a committed `.env.example`. `.env` is gitignored; gitleaks runs in pre-commit **and** CI. No secret is ever read in client-side code.
+- **(AI) prompt-versioning · eval harness · tracing:** **N/A — not an AI product** (Vision: no LLM features; AI is a recorded Non-goal). No prompts, no model calls, so no prompt-versioning, eval harness or LLM tracing. *Trigger to revisit:* an AI feature is reopened via the Non-goal reversal protocol, at which point all three become ADRs before any model call is written.
 
 ## Structure         <!-- /structure --> (see STRUCTURE.md for the full folder map)
 - **Folder → purpose map (summary):**
