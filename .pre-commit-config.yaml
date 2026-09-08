@@ -1,0 +1,35 @@
+# Pre-commit hooks — the gate that runs on your machine before a commit lands.
+#
+# Install once:  pre-commit install
+# Run manually:  make lint   (or: pre-commit run --all-files)
+#
+# CI runs the same checks, so a green pre-commit means a green CI on these items.
+# The secret scan is the load-bearing one: a leaked .env is a real incident, and
+# catching it here is the difference between "oops" and "rotate everything".
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+        name: gitleaks — block secrets from being committed
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: detect-private-key
+
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.3.14
+    hooks:
+      - id: biome-check
+        name: biome — lint + format TypeScript/TSX
+        additional_dependencies: ["@biomejs/biome@2.3.14"]

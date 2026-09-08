@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Architecture · AI product? no_
+_Last updated: 2026-09-08 · Stage: Structure · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -133,8 +133,25 @@ _Last updated: 2026-09-08 · Stage: Architecture · AI product? no_
 - **(AI) prompt-versioning · eval harness · tracing:** **N/A — not an AI product** (Vision: no LLM features; AI is a recorded Non-goal). No prompts, no model calls, so no prompt-versioning, eval harness or LLM tracing. *Trigger to revisit:* an AI feature is reopened via the Non-goal reversal protocol, at which point all three become ADRs before any model call is written.
 
 ## Structure         <!-- /structure --> (see STRUCTURE.md for the full folder map)
+- **Shape:** single Next.js app (ADR-001) — routes, UI and API in one `src/` tree, layered so dependencies point inward: `src/app` (routes/UI) → `src/domain` (rules) → `src/db/repositories` (SQL) → Postgres, with `src/providers` + `src/infra` off to the side for anything external or cross-cutting.
 - **Folder → purpose map (summary):**
-- **Prompts location (AI):** `app/prompts/` (backend sub-package; YAML, never inline)
+  - `src/app/` — Next.js App Router; every URL. `src/app/api/` = thin HTTP handlers (parse · authorize · delegate), no logic.
+  - `src/components/` — `ui/` (shadcn primitives) · `features/` (subscription-specific) · `layout/` (shell). Render only; totals maths lives in `domain/`.
+  - `src/domain/` — the business rules as pure functions (cycle normalisation, totals, upcoming-window). No I/O, so it is exhaustively unit-testable.
+  - `src/db/` — `schema/` (Drizzle tables, source of truth) · `repositories/` (intention-named queries; **every method takes the owning `userId`**, ADR-005).
+  - `src/providers/` — one adapter per external (error reporter, clock, future email). A vendor SDK may be imported **only** inside its own adapter.
+  - `src/infra/` — cross-cutting plumbing: structured logger, request-id propagation, shared error wrapper.
+  - `src/auth/` — session reading (fails **closed**) + ownership guards. Separate from `providers/` because every data path depends on it.
+  - `src/schemas/` — Zod contracts for boundary payloads; TS types inferred from them, so validation and types cannot drift. (Absorbs the usual `validators/`.)
+  - `src/config/` — the no-hardcoding engine (below). `src/lib/` — small shared helpers, deliberately last and deliberately small.
+  - `drizzle/` — generated migration SQL, committed + reviewed. `tests/` — `unit/` (no I/O) · `integration/` (real Postgres, incl. cross-account authz) · `e2e/` (Playwright).
+  - `docs/features/` (one doc per feature) · `scripts/` (seed/reset, never runtime) · `public/` (static) · `.github/` (Dependabot now; CI at /foundation).
+- **Config layering scaffolded (the no-hardcoding engine):** `src/config/platform.yaml` (engine knobs: pool, timeouts, retries, session TTL, rate limits, log level, error-reporter) + `src/config/product.yaml` (product knobs: categories, allowed currencies, 30-day renewal window, billing cycles + months, input limits) + `src/config/loader.ts` (typed Zod loader: YAML → `.env` overrides → validated, cached `AppConfig`). **Verified: `process.env` is read in `loader.ts` and nowhere else in `src/`.** Loader throws at boot on a missing/malformed value, and on `ERROR_REPORTER=sentry` without a DSN.
+- **Root scaffolding present:** `README.md` · `STRUCTURE.md` · `CONTRIBUTING.md` · `SECURITY.md` (private-disclosure policy) · `CHANGELOG.md` (Keep a Changelog, `[Unreleased]` seeded) · `.gitignore` · `.env.example` · `.gitleaks.toml` · `.pre-commit-config.yaml` · `Makefile` (`make help` lists every task) · `package.json` (prod/dev split, versions checked against the live npm registry 2026-09-08, not recalled) · `docker-compose.yml` (local Postgres 18) · `.dockerignore` · `.github/dependabot.yml`.
+- **Secret hygiene verified:** `git check-ignore` confirms `.env`, `.env.local`, `.env.production`, `.env.bak`, `.env.backup`, `app.env`, `prod.env.local` are all ignored and `.env.example` is the only committed env file. No secret in any code file. `.gitleaks.toml` allowlist holds two documented local-dev fakes only (`.env.example` placeholder, local compose password).
+- **Map↔tree agreement (both directions) verified:** all 26 on-disk folders appear in `STRUCTURE.md`; the four folders it names as deliberately absent (`src/jobs/`, `src/prompts/`, `src/validators/`, `frontend/`) are confirmed absent, each with the reason recorded.
+- **Prompts location (AI): N/A — not an AI product.** No `prompts/` folder; AI is a recorded Non-goal (Vision/Scope). Trigger to create one: an AI feature is reopened via the Non-goal reversal protocol.
+- **Has user-facing UI: YES** → `/design-system` runs next, before any screens are built.
 
 ## Design             <!-- /design-system --> (UI products only; see DESIGN.md for the full system)
 - **Has user-facing UI?** <yes/no — if no, this phase is skipped intentionally>

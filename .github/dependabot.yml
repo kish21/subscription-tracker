@@ -1,0 +1,36 @@
+# Automated dependency updates.
+#
+# Grouped so that a routine week produces a couple of reviewable PRs rather than
+# twenty. Security updates are deliberately NOT grouped — those should arrive on
+# their own, so they are obvious and mergeable immediately.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      production-minor-patch:
+        applies-to: version-updates
+        dependency-type: production
+        update-types: ["minor", "patch"]
+      development:
+        applies-to: version-updates
+        dependency-type: development
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependencies"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependencies"]

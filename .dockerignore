@@ -1,0 +1,29 @@
+# Keep the build context small and keep secrets out of the image.
+# .env is listed first because copying it into an image is the classic way a secret
+# escapes into a registry.
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+.git
+.github
+node_modules
+.next
+out
+build
+dist
+coverage
+playwright-report
+test-results
+.pnpm-store
+.turbo
+.cache
+
+docs
+tests
+*.md
+!README.md
+.postgres-data

@@ -1,0 +1,35 @@
+# Local development dependencies.
+#
+# Right now this brings up Postgres only. The app itself still runs on your machine
+# with `make dev`. The app's own container image arrives in /foundation, when there
+# is an app to containerise — at which point an `app` service joins this file and
+# `docker compose up` runs the whole thing.
+#
+# The credentials below are LOCAL ONLY and match .env.example on purpose, so a new
+# developer can go from clone to running database without editing anything. They are
+# allowlisted in .gitleaks.toml for that reason. Production credentials come from the
+# host's environment and never appear in a file.
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: subscription-tracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: tracker_local_dev
+      POSTGRES_DB: subscription_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Lets other services (and CI) wait for a database that is genuinely ready,
+      # rather than one whose port is merely open.
+      test: ["CMD-SHELL", "pg_isready -U tracker -d subscription_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

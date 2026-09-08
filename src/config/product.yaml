@@ -1,0 +1,60 @@
+# Product config — PRODUCT / BUSINESS knobs.
+#
+# Things a product decision changes, not an engineering one. Everything in here is
+# a number or a list that someone could reasonably want to change WITHOUT a code
+# change: how far ahead "upcoming" looks, which categories exist, what currency a
+# new account defaults to.
+#
+# The rule this file enforces: if you find yourself typing `30` or `"Streaming"`
+# into a .ts file, it belongs here instead.
+#
+# Committed to git. No secrets, ever.
+
+renewals:
+  # "Upcoming renewals" window on the dashboard. Scope says 30 days; it is config
+  # so that changing our mind is a one-line edit, not a hunt through the code.
+  upcoming_window_days: 30 # env: RENEWALS_UPCOMING_WINDOW_DAYS
+
+currency:
+  # Currency offered by default at signup. One currency per account (Scope);
+  # multi-currency is deferred with a recorded trigger.
+  default: USD # env: DEFAULT_CURRENCY
+  # ISO-4217 codes a user may pick from at signup.
+  allowed:
+    - USD
+    - EUR
+    - GBP
+    - INR
+    - CAD
+    - AUD
+
+categories:
+  # The category list a subscription can be filed under. Drives the filter and the
+  # per-category spend breakdown (Scope, M2). Kept as data so adding "Fitness"
+  # never needs a deploy of new logic.
+  - Streaming
+  - Software
+  - Cloud & Hosting
+  - News & Reading
+  - Music & Audio
+  - Gaming
+  - Health & Fitness
+  - Utilities
+  - Other
+
+limits:
+  # Guardrails on user input, enforced at the boundary by the Zod schemas.
+  max_subscriptions_per_account: 500 # env: MAX_SUBSCRIPTIONS_PER_ACCOUNT
+  max_name_length: 100 # env: MAX_SUBSCRIPTION_NAME_LENGTH
+  # Prices are stored as integer minor units (ADR-004). This ceiling is in MAJOR
+  # units for readability: 1,000,000.00 of the account currency.
+  max_price_major_units: 1000000 # env: MAX_PRICE_MAJOR_UNITS
+
+billing_cycles:
+  # Supported billing cycles and how many months each spans. The totals maths
+  # normalises everything to a monthly figure using these numbers, so adding a
+  # cycle is a config change plus a test, not new branching logic.
+  - { id: monthly, label: Monthly, months: 1 }
+  - { id: quarterly, label: Quarterly, months: 3 }
+  - { id: semiannual, label: Every 6 months, months: 6 }
+  - { id: yearly, label: Yearly, months: 12 }

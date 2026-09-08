@@ -1,0 +1,50 @@
+# Platform config — ENGINE / TECHNICAL knobs.
+#
+# Things you change to make the machine behave differently: timeouts, pool sizes,
+# retry counts, log verbosity. Changing a value here should never change what the
+# product *means* to a user — that lives in product.yaml.
+#
+# NEVER put a secret in this file. It is committed to git. Secrets live in `.env`
+# (names documented in `.env.example`) and are read by loader.ts.
+#
+# Any value here can be overridden per-environment by the matching env var, which
+# is why the env var name is written next to each one.
+
+database:
+  # Connection pool. Free-tier Postgres often caps total connections low.
+  pool_max: 10 # env: DB_POOL_MAX
+  connect_timeout_ms: 5000 # env: DB_CONNECT_TIMEOUT_MS
+  # Hard ceiling on a single query. Guards the dashboard perf budget (ADR: <400ms p95)
+  # by turning a runaway query into a fast, loud error instead of a hung request.
+  statement_timeout_ms: 5000 # env: DB_STATEMENT_TIMEOUT_MS
+  # Retries apply to TRANSIENT CONNECTION errors only — never to a write that may
+  # already have applied. See PRODUCT.md#Architecture adapter table.
+  connect_retries: 2 # env: DB_CONNECT_RETRIES
+  connect_retry_backoff_ms: 250 # env: DB_CONNECT_RETRY_BACKOFF_MS
+
+session:
+  # How long a login lasts before the cookie session expires.
+  ttl_days: 30 # env: SESSION_TTL_DAYS
+  # How often an active session's expiry is pushed forward.
+  refresh_every_days: 1 # env: SESSION_REFRESH_EVERY_DAYS
+
+rate_limit:
+  # Enabled at M3 per the Plan; the knobs exist from day one so turning it on is
+  # config, not a code change.
+  enabled: false # env: RATE_LIMIT_ENABLED
+  window_seconds: 60 # env: RATE_LIMIT_WINDOW_SECONDS
+  # Attempts allowed per window, per IP, on the credential endpoints.
+  signup_max_attempts: 5 # env: RATE_LIMIT_SIGNUP_MAX
+  login_max_attempts: 10 # env: RATE_LIMIT_LOGIN_MAX
+
+logging:
+  level: info # env: LOG_LEVEL  (trace|debug|info|warn|error|fatal)
+  # Pretty-print for humans in dev; always raw JSON in production so logs are queryable.
+  pretty: false # env: LOG_PRETTY
+
+error_reporter:
+  # Which adapter to construct. "noop" swallows nothing — it logs — but sends nowhere.
+  # Switched to "sentry" at M3. See PRODUCT.md#Architecture adapter table.
+  provider: noop # env: ERROR_REPORTER  (noop|sentry)
+  # DSN itself is a secret and lives in .env only: SENTRY_DSN
+  send_timeout_ms: 2000 # env: ERROR_REPORTER_TIMEOUT_MS
