@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install lanekeeper
-        run: python -m pip install --upgrade pip "lanekeeper @ git+https://github.com/kish21/parallel-agents@claude/where-are-we-s128lv"
+        run: python -m pip install --upgrade pip lanekeeper
 
       - name: Check the change against its lane
         env:
