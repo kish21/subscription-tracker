@@ -1,0 +1,23 @@
+version: 1
+project:
+  name: subscription-tracker
+lanes:
+- name: adhoc-02
+  allow:
+  - src/components/features/auth-form.tsx
+  - docs/features/auth.md
+  deny: []
+  ticket: '11'
+  paths_from: ticket
+ports:
+  backend:
+    start: 8001
+    end: 8099
+  frontend:
+    start: 3001
+    end: 3099
+environment:
+  url_templates:
+    API_URL: http://${HOST}:${BACKEND_PORT}
+    BACKEND_URL: http://${HOST}:${BACKEND_PORT}
+    FRONTEND_URL: http://${HOST}:${FRONTEND_PORT}
