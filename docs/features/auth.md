@@ -48,3 +48,7 @@ Self-hosted authentication and session management using **Better Auth** with the
    - Clicked "Sign Out", verified redirect to `/login`.
    - Re-authenticated via `/login` and confirmed session restoration.
    - Verified unauthenticated `GET /dashboard` redirects with HTTP 307 to `/login`.
+
+## Demo account quick-fill (ADHOC-02)
+
+On `/login` a "Use Demo Account" control fills the seeded credentials in one click.

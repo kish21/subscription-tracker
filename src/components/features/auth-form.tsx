@@ -28,6 +28,13 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // ADHOC-02: dev-only 1-click fill so reviewers can sign in without retyping.
+  const fillDemoAccount = () => {
+    setEmail('kishore@test.com')
+    setPassword('Password123!')
+    setError(null)
+  }
+
   const isSignup = mode === 'signup'
 
   useEffect(() => {
