@@ -24,5 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repository (`src/db/repositories/subscription.ts`) enforcing `userId` scoping (ADR-005),
   concurrent idempotency key handling ([ADHOC-03]), SQL LIKE wildcard escaping ([ADHOC-04]),
   and REST API endpoints at `/api/v1/subscriptions`.
+- Dashboard experience & north-star event (`M1-SLICE-03`): pure aggregation builder
+  (`src/domain/dashboard.ts`) shared by the server-rendered page and `GET /api/v1/dashboard`,
+  spend summary / upcoming-renewals / subscriptions table / add-subscription dialog, and the
+  privacy-preserving `renewals_viewed` log event (ADR-006). Playwright E2E suite added.
 
 [Unreleased]: https://github.com/kish21/subscription-tracker/commits/main
