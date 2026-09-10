@@ -2,7 +2,11 @@ import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-process.loadEnvFile?.('.env')
+try {
+  process.loadEnvFile?.('.env')
+} catch {
+  // Ignore if .env is missing (CI injects env vars directly) or already loaded
+}
 
 import { GET } from '@/app/api/v1/dashboard/route'
 import { auth } from '@/auth/server'

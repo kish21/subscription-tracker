@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
-process.loadEnvFile?.('.env')
+try {
+  process.loadEnvFile?.('.env')
+} catch {
+  // Ignore if .env is missing (CI injects env vars directly) or already loaded
+}
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 
