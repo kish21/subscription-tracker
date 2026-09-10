@@ -15,7 +15,7 @@ Rules:
 
 # PRODUCT — Subscription Tracker
 
-_Last updated: 2026-09-08 · Stage: Learn (M1-SLICE-02 learnings captured, M1-SLICE-03 next) · AI product? no_
+_Last updated: 2026-09-10 · Stage: Build (M1-SLICE-03 dashboard shipped; M1 core slice complete) · AI product? no_
 
 ## Vision            <!-- /vision -->
 - **Vision sentence:** Anyone can see every subscription they pay for, what it costs per month and year, and what renews next, from any browser, without handing a bank login to a third party or running a server.
@@ -220,6 +220,7 @@ _Last updated: 2026-09-08 · Stage: Learn (M1-SLICE-02 learnings captured, M1-SL
 |---|---|---|---|
 | M1-SLICE-01 Authentication & Session Lifecycle | YES (Argon2/bcrypt KDF in DB, httpOnly Lax cookie, fail-closed guards, Zod boundary validation, no secrets) | Integration suite (12 tests against Postgres), unit suite (29 tests), frontend-audit (0 errors), live browser signup/login/logout flow | [docs/features/auth.md](docs/features/auth.md) |
 | M1-SLICE-02 Subscription Domain & Storage Seam | YES (Tenant isolation on all queries ADR-005, integer minor units ADR-004, fail-closed 401, log redaction, idempotency guard) | Integration suite (10 tests in subscriptions.test.ts against Postgres), unit suite (15 tests in calculations.test.ts), live HTTP curl/fetch (signup, create, list) | [docs/features/subscriptions-crud.md](docs/features/subscriptions-crud.md) |
+| M1-SLICE-03 Dashboard Experience & North-Star Event | PARTIAL (auth fail-closed 307/401 verified live, tenant isolation proven at API and browser altitude, north-star event carries counts only — 0 name/price leaks; frontend-audit NOT 0 errors: 11 pre-existing palette failures, see [ADHOC-05]) | 8 unit + 4 integration (real Postgres) + 3 Playwright E2E, all green; live server render shows $27.57/$330.88 and one `renewals_viewed` per render; delete-the-wire on the event stayed GREEN (gap recorded) | [docs/features/dashboard.md](docs/features/dashboard.md) |
 
 ## Dev-complete      <!-- /dev-check -->
 - [ ] Every core-scope feature built & runs
